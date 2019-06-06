@@ -76,6 +76,25 @@
 	\end{enumerate}
 \end{frame}
 
+\begin{frame}{Проблема повторов}
+\begin{block}{Геномный путь}
+	В графе де Брёйна строки $\mathcal{S}$ \textit{существует} соответствующий исходной строке $\mathcal{S}$ \textit{эйлеров путь}, то есть путь, проходящий по каждому ребру мультиграфа ровно столько раз, какова его кратность. Будем называть этот путь \textbf{геномным}.
+\end{block}
+
+\textbf{Проблема}: повторы последовательностей (длины больше $k$).\\
+\bigskip
+\begin{minipage}{0.55\textwidth}
+	\includegraphics[width=0.9\textwidth]{img/repeat-resolution-good}
+\end{minipage}%
+\begin{minipage}{0.45\textwidth}
+	Пусть $\mathcal{S} = \mathbf{e_1 f e_2 \ldots g_1 f g_2}$, где $\mathbf{e}_i$, $\mathbf{g}_i$ и $\mathbf{f}$ --- некоторые строки.\\
+	{\color{blue} Как должен проходить геномный путь?}
+\end{minipage}\\
+\bigskip
+\textbf{Идея}:  будем сравнивать геномные и графовые расстояния между ридами.
+
+\end{frame}
+
 \begin{frame}{Постановка задачи}
 	Зафиксируем пару $\mathbf{e}_1, \mathbf{e}_2$ рёбер графа де Брёйна. Будем предполагать, что
 	\begin{enumerate}

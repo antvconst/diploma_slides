@@ -1,5 +1,4 @@
 \documentclass[unicode, notheorems]{beamer}
-
 \mode<presentation>
 {
 	\usetheme[numbers, totalnumbers, minimal]{Statmod}
@@ -9,11 +8,13 @@
 	\setbeamertemplate{itemize item}[circle]
 }
 
+\usepackage{tikz}
 \usepackage[T2A]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage[russian]{babel}
 \usepackage{amsthm}
 \usepackage{graphicx}
+\usepackage{tikzscale}
 \usepackage{float}
 \usepackage{subfig}
 \usepackage{bm}
@@ -48,55 +49,74 @@
 	\titlepage
 \end{frame}
 
-\begin{frame}{Задача сборки генома}
-	\begin{block}{Основные термины}
-	\begin{itemize}
-		\item \textbf{Геномом} будем называть строку $\mathcal{S}$ над четырёхбуквенным алфавитом $\{A, T, G, C\}$.
-		\item \textbf{Рид} (или \textbf{прочтение}) --- короткая подстрока $\mathcal{S}$.
-		\item \textbf{$k$-мер} --- подстрока $\mathcal{S}$, имеющая длину $k$.
+\begin{frame}{Сборка генома}
+	\begin{block}{}
+  		\textbf{Геном} --- строка над конечным алфавитом $\{ \mathbf{A}, \mathbf{C}, \mathbf{G}, \mathbf{T} \}$.
+  	\end{block}
+    \begin{itemize}
+	   \item  Размеры геномов у различных биологических видов варьируются в диапазоне от 100 тыс.  до  150 млрд. символов.
+	   \item Не существует метода, позволяющего прочитать геном целиком.
+	   \item Вместо этого из генома случайным образом считываются подстроки, называемые \textit{ридами}. Мы будем иметь дело с \textit{короткими} ридами, имеющими длину 50--200 символов. 
+	   \item Исходный геном затем <<собирается>> по перекрытиям ридов.
 	\end{itemize}
-\end{block}
-\medskip
-Пусть $\mathfrak{R}$ --- набор ридов для генома $\mathcal{S}$.\\
-\medskip
-\textbf{\color{blue} Задача сборки генома} \\
-\smallskip
-По набору строк $\mathfrak{R}$ восстановить (<<собрать>>) как можно более длинные \textbf{контиги} --- непрерывные подстроки исходной строки $\mathcal{S}$. В идеале хочется получить всю строку $\mathcal{S}$ целиком.
 \end{frame}
 
-\begin{frame}{Граф де Брёйна}
-	Пусть $k$ --- положительное целое число.\\
+\begin{frame}[fragile]{Граф де Брёйна}
+	\begin{block}{}
+		$k$-мер строки $S$ --- это её подстрока длины $k$.
+	\end{block}
+	\medskip
+    \begin{minipage}{0.6\textwidth}
+        \textbf{Граф де Брёйна $G$, $k \in \mathbb{N}$}:
+        \begin{enumerate}
+            \item Вершины --- $k$-меры строки $\mathcal{S}$.
+            \item $u$ и $v$ соединены ребром кратности $N$, если $\mathcal{S}$ содержит $N$ раз встречающийся $(k+1)$-мер, имеющий префикс $u$ и суффикс $v$.
+        \end{enumerate}
+		
+        Хорошо известно, что в $G$ существует \textit{эйлеров} (проходящий по всем рёбрам столько раз, какова их кратность) путь $\mathbf{p}$, который соответствует $\mathcal{S}$.
+    \end{minipage}%
+    \begin{minipage}{0.4\textwidth}
+%   		\scalebox{0.8\textwidth}{$\mathcal{S} = \mathrm{AACTATACTAGACT}$, $k=3$}
+    	\begin{figure}
+	        \centering
+    	    \includegraphics[width=0.9\linewidth]{fig/dBg}
+        \end{figure}
+    \end{minipage}
+	
 	\bigskip
-	\textbf{Сжатый граф де Брёйна строки $\mathcal{S}$} --- направленный мультиграф следующей конструкции:
-
-	\begin{enumerate}
-		\item Множество вершин графа --- множество всех $k$-меров строки $\mathcal{S}$.
-		\item Для каждого $(k+1)$-мера, содержащегося в $\mathcal{S}$, в граф добавляется ребро $v_1 \to v_2$, где $v_1$ и $v_2$ --- его префикс и суффикс длины $k$ соответственно. Кратность такого ребра равна количеству вхождений соответствующего $(k+1)$-мера в геном.
-		\item Пути, не имеющие разветвлений, заменяются рёбрами путём конкатенации соответствующих $(k+1)$-меров.
-	\end{enumerate}
+    Сборка генома $\iff$ поиск $\mathbf{p}$ среди всех эйлеровых путей в G.
 \end{frame}
 
 \begin{frame}{Проблема повторов}
-\begin{block}{Геномный путь}
-	В графе де Брёйна строки $\mathcal{S}$ \textit{существует} соответствующий исходной строке $\mathcal{S}$ \textit{эйлеров путь}, то есть путь, проходящий по каждому ребру мультиграфа ровно столько раз, какова его кратность. Будем называть этот путь \textbf{геномным}.
-\end{block}
-
-\textbf{Проблема}: повторы последовательностей (длины больше $k$).\\
-\bigskip
-\begin{minipage}{0.55\textwidth}
-	\includegraphics[width=0.9\textwidth]{img/repeat-resolution-good}
+	\textbf{Проблема}: повторы последовательностей (длины $\ge k$) приводят к образованию циклов.
+\begin{minipage}{0.6\textwidth}
+	
+	\bigskip
+	Добавим к строке $\mathcal{S}$ из прошлого примера один символ \textbf{\color{red} G} в конец.
+	
+	\medskip
+	Как теперь должен проходить геномный путь: \begin{itemize}
+		\item По верхней петле, затем по нижней?
+		\item Наоборот, сначала по нижней петле, затем по верхней?
+	\end{itemize}
 \end{minipage}%
-\begin{minipage}{0.45\textwidth}
-	Пусть $\mathcal{S} = \mathbf{e_1 f e_2 \ldots g_1 f g_2}$, где $\mathbf{e}_i$, $\mathbf{g}_i$ и $\mathbf{f}$ --- некоторые строки.\\
-	{\color{blue} Как должен проходить геномный путь?}
-\end{minipage}\\
-\bigskip
-\textbf{Идея}:  будем сравнивать геномные и графовые расстояния между ридами.
+\begin{minipage}{0.4\textwidth}
+	\begin{figure}
+		\centering
+		\includegraphics[width=0.9\textwidth]{fig/dBg_repeat}
+	\end{figure}
+\end{minipage}
 
+\bigskip
+По графу ответить на этот вопрос невозможно!
+
+\medskip
+Для разрешения повторов обычно используют информацию о расстоянии между рёбрами графа.
 \end{frame}
 
 \begin{frame}{Постановка задачи}
-	Зафиксируем пару $\mathbf{e}_1, \mathbf{e}_2$ рёбер графа де Брёйна. Будем предполагать, что
+	Зафиксируем пару $\mathbf{e}_1, \mathbf{e}_2$ рёбер графа де Брёйна.
+	Будем предполагать, что
 	\begin{enumerate}
 		\item  $\mathbf{e}_1 = \mathcal{S}[a, b]$ и $\mathbf{e}_2 = \mathcal{S}[c, d]$, где $a < c$;
 		\item $\mathbf{e}_1$ и $\mathbf{e}_2$ соединяет путь $\bm p =  \mathbf{e}_1 \to p_1 \to \ldots \to p_m \to \mathbf{e}_2$.
@@ -112,19 +132,13 @@
 		\mathbf{D}_{\mathrm{genome}} = \big\{  d_{\mathrm{genome}}(\mathbf{e}_1^{(i)}, \mathbf{e}_2^{(j)})\ \mid \mathbf{e}_s^{(t)} \text{ --- } t \text{-ое вхождение } \mathbf{e}_s \text{ в геном } \mathcal{S} \big\},
 	\end{gather*}\\ 
 	\textsc{ \large \color{blue} Задача:}
-	Найти пересечение $\mathbf{D} = \mathbf{D}_{\mathrm{graph}} \cap \mathbf{D}_{\mathrm{genome}}$.
-	\end{frame}
+	Предложить алгоритм, определяющий  элементы множества $\mathbf{D} = \mathbf{D}_{\mathrm{graph}} \cap \mathbf{D}_{\mathrm{genome}}$.
+\end{frame}
 
 \begin{frame}{Вероятностная модель парных ридов}
 
-{\color{blue} \bf Из чего состоит библиотека ридов $\mathfrak{R}$?}\\
-\medskip
-Пусть
-\begin{enumerate}
-	\item  $\xi$ --- дискретная случайная величина с носителем $\{ 1, \ldots, |\mathcal{S}|\}$, имеющая смысл координаты в геноме,
-	\item $\eta$ --- независимая от $\xi$ неотрицательная целочисленная случайная величина (т. н. \textbf{длина вставки}),
-	\item $\ell$ --- положительное целое число (\textbf{длина рида}).
-\end{enumerate}
+Пусть $\ell > 0$ --- целое число. Рассмотрим независимые случайные величины $\xi \in \{ 1, \ldots, |\mathcal{S}| - \ell\}$ и $\eta > 0$.
+
 \begin{block}{}
 	\begin{enumerate}
 		\item Фрагмент --- подстрока генома, имеющая вид $\mathcal{S}[\xi, \xi+\eta]$;
@@ -132,12 +146,16 @@
 		\item Правый рид --- суффикс длины $\ell$ фрагмента, т.е. подстрока $\mathcal{S}[\xi+\eta-\ell, \xi+\eta]$.
 	\end{enumerate}
 \end{block}
+\begin{figure}[h]
+	\includegraphics[scale=0.12]{fig/fragment}
+	\caption{Структура фрагмента}
+\end{figure}
 \end{frame}
 
 \begin{frame}{Вероятностный подход к задаче}
 	\begin{figure}	
 		\centering
-		\includegraphics[scale=0.05]{img/alignment_shifted}
+		\includegraphics[scale=0.2]{img/alignment_shifted}
 		\caption{Расположение ридов на рёбрах графа}
 	\end{figure}
 
@@ -200,89 +218,59 @@
 	Здесь $\pi_i$ мы можем оценить, усредняя апостериорную вероятность $p(g^{(i)} \mid t, \tau, A_{\mathbf{e}_2})$ по всем имеющимся реализациям.
 \end{frame}
 
-\begin{frame}{Апостериорное распределение для $n$ реализаций}
-	Получено следующее утверждение, дающее апостериорное распределение $g$ при условии набора реализаций $(t, \tau)$.
-	\begin{block}{Предложение}
-		Пусть длина вставки $\eta$ имеет распределение $\mathcal{P}_\eta$ с функцией распределения $F(x) = \Prb(\eta < x)$. Будем считать, что априорно $g$ равномерно распределена на $\mathbf{D}_{\mathrm{graph}}$.\\
+\begin{frame}{Данные}			
+		Во всех тестах использовались графы де Брёйна, построенные по различным библиотекам ридов для первых 400 тысяч нуклеотидов генома \textit{E.coli} (штамм \textit{K12 MG1655}).
 		\medskip
-		Тогда
-		\begin{equation*}
-		p(g \mid \mathbb{T}, A_{\mathbf{e}_2}) = \frac{1}{n} \sum_{i = 1}^n \left[ \frac{q(\tau_i, g, t_i)}{\sum_{j=1}^k q(\tau_i, g^{(j)}, t_i)} \right]\,,
-		\end{equation*}
-		где
-		\begin{equation*}
-			q(x, y, z)  = \frac{F\big(x+y+z+2\ell+1\big) - F\big(x+y+z+2\ell\big)}{F( y + z + \ell + M) - F(y + z + 2\ell)}\,.
-		\end{equation*}
-	\end{block}
+		
+		Были проведены эксперименты на:\\
+		\smallskip
+		\textbf{Синтетических ридах} с длиной вставки $\eta \sim \mathrm{N}(\mu, \sigma^2)$:
+		\begin{itemize}
+			\item $\mu = 1000$, $\sigma = 30$.
+			\item $\mu = 400$, $\sigma = 30$.
+		\end{itemize}
+		\textbf{Реальных ридах}. Были рассмотрены две библиотеки:
+		\begin{itemize}
+				\item Первая имеет близкое к нормальному распределение $\eta$. Использовалась ф. р. нормального распределения с оценёнными параметрами ($\mu \approx 215$, $\sigma \approx 10$).
+				\item Для второй библиотеки в качестве $F$ использовалась эмпирическая ф. р. ($\mathrm{med}\ \eta \approx 480$).
+		\end{itemize}
 \end{frame}
 
-\begin{frame}{Данные}
-	Во всех следующих примерах используются графы де Брёйна, построенные по различным библиотекам ридов для первых 400 тысяч нуклеотидов генома \textit{E.coli} (штамм \textit{K12 MG1655}).\\
+\begin{frame}{Пример: описание библиотеки}
+	Рассмотрим условия, максимально приближенные к реальным:
 	\medskip
-	{\color{blue} Реальные риды.} Были рассмотрены две библиотеки:
-	\begin{enumerate}
-		\item Первая (<<Библиотека A>>) имеет близкое к нормальному распределение $\eta$. Использовалась ф. р. нормального распределения с оценёнными параметрами ($\mu \approx 215$, $\sigma \approx 10$).
-		\item Для второй библиотеки (<<Библиотека Б>>) в качестве $F$ использовалась эмпирическая ф. р. ($\mathrm{med}\ \eta \approx 480$).
-	\end{enumerate}
-\end{frame}
-
-\begin{frame}{Распределения длины вставки}
-		\begin{figure}%
-			\centering
-			\subfloat[Библиотека А. Хорошо аппроксимируется нормальным с параметрами $\mu = 215$, $\sigma = 10$]{{\includegraphics[width=0.45\linewidth]{fig/real-reads/good-lib/hist} }}%
-			\qquad
-			\subfloat[Библиотека Б. Используем эмпирическую ф. р.,  $\mathrm{mode}\ \eta = 480$]{{\includegraphics[width=0.45\linewidth]{fig/real-reads/bad-lib/hist} }}%
-			\caption{Распределения длины вставки для библиотек А и Б}
-		\end{figure}
-\end{frame}
-
-\begin{frame}{Библиотека А}
-	\begin{figure}%
-		\centering
-		\subfloat[Апостериорное распределение]{{\includegraphics[width=0.45\linewidth]{fig/real-reads/good-lib/4-posterior} }}%
-		\qquad
-		\subfloat[Гистограмма $\eta - g$]{{\includegraphics[width=0.45\linewidth]{fig/real-reads/good-lib/4-is} }}%
-		\caption{Неповторные рёбра}
+	
+	\begin{minipage}{0.55\textwidth}
+		\begin{itemize}
+			\item Медианная длина вставки: 480.
+			\item В качестве функции распределения $F$, требуемой для получения оценок, мы будем использовать эмпирическую ф. р., полученную по всем имеющимся ридам.
+		\end{itemize}
+	\end{minipage}%
+	\begin{minipage}{0.45\textwidth}
+	\begin{figure}
+		\includegraphics[width=0.9\textwidth]{fig/real-reads/bad-lib/hist}
+		\caption{Распределение длины вставки $\eta$}
 	\end{figure}
+	\end{minipage}
 \end{frame}
 
-\begin{frame}{Библиотека А}
-	\begin{figure}%
-		\centering
-		\subfloat[Апостериорное распределение]{{\includegraphics[width=0.45\linewidth]{fig/real-reads/good-lib/1-posterior} }}%
-		\qquad
-		\subfloat[Гистограмма $\eta - g$]{{\includegraphics[width=0.45\linewidth]{fig/real-reads/good-lib/1-is} }}%
-		\caption{Одно из рёбер имеет двойную кратность}
-	\end{figure}
-\end{frame}
-
-\begin{frame}{Библиотека Б}
+\begin{frame}{Пример: рёбра без повторов}
 \begin{figure}%
 	\centering
-	\subfloat[Апостериорное распределение]{{\includegraphics[width=0.45\linewidth]{fig/real-reads/bad-lib/4-posterior} }}%
+	\subfloat[Фрагмент графа]{{\includegraphics[width=0.45\textwidth]{fig/real-reads/bad-lib/4-graph} }}%
 	\qquad
-	\subfloat[Гистограмма $\eta - g$]{{\includegraphics[width=0.45\linewidth]{fig/real-reads/bad-lib/4-is} }}%
-	\caption{Неповторные рёбра}
+	\subfloat[Апостериорное распределение]{{\includegraphics[width=0.45\linewidth]{fig/real-reads/bad-lib/4-posterior} }}%
+	\caption{Два длинных ребра, не имеющих повторов}
 \end{figure}
 \end{frame}
 
-\begin{frame}{Библиотека Б}
-	\begin{figure}%
-		\centering
-		\subfloat[Апостериорное распределение]{{\includegraphics[width=0.45\linewidth]{fig/real-reads/bad-lib/2-posterior} }}%
-		\qquad
-		\subfloat[Гистограмма $\eta - g$]{{\includegraphics[width=0.45\linewidth]{fig/real-reads/bad-lib/2-is} }}%
-		\caption{Одно из рёбер имеет двойную кратность}
-	\end{figure}
-\end{frame}
-
-\begin{frame}{Библиотека Б}
+\begin{frame}{Пример: повторное ребро}
 \begin{figure}%
 	\centering
-	\subfloat[Апостериорное распределение]{{\includegraphics[width=0.45\linewidth]{fig/real-reads/bad-lib/3-posterior} }}%
+	\subfloat[Фрагмент графа]{{\includegraphics[width=0.45\linewidth]{fig/real-reads/bad-lib/3-graph} }}%
 	\qquad
-	\subfloat[Гистограмма $\eta - g$]{{\includegraphics[width=0.45\linewidth]{fig/real-reads/bad-lib/3-is} }}%
-	\caption{Одно из рёбер имеет тройную кратность}
+	\subfloat[Гистограмма $\eta - g$]{{\includegraphics[width=0.45\linewidth]{fig/real-reads/bad-lib/3-posterior} }}%
+	\caption{Длинное ребро без повторов и короткое ребро (63 bp) тройной кратности}
 \end{figure}
 \end{frame}
 

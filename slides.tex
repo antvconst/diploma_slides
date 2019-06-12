@@ -56,35 +56,50 @@
     \begin{itemize}
 	   \item  Размеры геномов у различных биологических видов варьируются в диапазоне от 100 тыс.  до  150 млрд. символов.
 	   \item Не существует метода, позволяющего прочитать геном целиком.
-	   \item Вместо этого из генома случайным образом считываются подстроки, называемые \textit{ридами}. Мы будем иметь дело с \textit{короткими} ридами, имеющими длину 50--200 символов. 
-	   \item Исходный геном затем <<собирается>> по перекрытиям ридов.
+	   \item Вместо этого из генома случайным образом считываются подстроки, называемые \textit{ридами}.
+	   \item Исходный геном затем должен быть восстановлен по этим подстрокам.
 	\end{itemize}
 \end{frame}
 
 \begin{frame}[fragile]{Граф де Брёйна}
-	\begin{block}{}
-		$k$-мер строки $S$ --- это её подстрока длины $k$.
-	\end{block}
-	\medskip
     \begin{minipage}{0.6\textwidth}
+    	\begin{block}{}
+    		$k$-мер строки $\mathcal{S}$ --- это её подстрока длины $k$.
+    	\end{block}
         \textbf{Граф де Брёйна $G$, $k \in \mathbb{N}$}:
         \begin{enumerate}
             \item Вершины --- $k$-меры строки $\mathcal{S}$.
-            \item $u$ и $v$ соединены ребром кратности $N$, если $\mathcal{S}$ содержит $N$ раз встречающийся $(k+1)$-мер, имеющий префикс $u$ и суффикс $v$.
+            \item $u$ и $v$ соединены ребром кратности $N$, если $\mathcal{S}$ содержит $N$ вхождений $(k+1)$-мера, имеющего префикс $u$ и суффикс $v$.
         \end{enumerate}
 		
-        Хорошо известно, что в $G$ существует \textit{эйлеров} (проходящий по всем рёбрам столько раз, какова их кратность) путь $\mathbf{p}$, который соответствует $\mathcal{S}$.
+		\medskip
+		Неформально говоря, граф де Брёйна состоит из всех уникальных подстрок длины $k$ генома $\mathcal{S}$, которые соединены в том порядке, в котором они встречаются в $\mathcal{S}$.
     \end{minipage}%
     \begin{minipage}{0.4\textwidth}
-%   		\scalebox{0.8\textwidth}{$\mathcal{S} = \mathrm{AACTATACTAGACT}$, $k=3$}
     	\begin{figure}
-	        \centering
-    	    \includegraphics[width=0.9\linewidth]{fig/dBg}
+	        \flushright
+    	    \includegraphics[width=0.9\linewidth]{fig/dBg_simple}
         \end{figure}
     \end{minipage}
+\end{frame}
+
+\begin{frame}{Сборка генома при помощи графа де Брёйна}
+	\begin{minipage}{0.6\textwidth}
+		Хорошо известно, что в графе де Брёйна $G$ существует \textit{эйлеров} (проходящий по всем рёбрам столько раз, какова их кратность) путь $\mathbf{p}^*$, который соответствует $\mathcal{S}$.
 	
-	\bigskip
-    Сборка генома $\iff$ поиск $\mathbf{p}$ среди всех эйлеровых путей в G.
+		\smallskip
+		\begin{itemize}
+			\item В реальной ситуации $G$ строится по $k$- и $(k+1)$-мерам, \alert{\it полученным из ридов}, так как $\mathcal{S}$ неизвестна.
+			\item Если эйлеровых путей в полученном графе несколько, то неизвестно, какой из них соответствует $\mathcal{S}$.
+		\end{itemize}
+	\end{minipage}%
+	\begin{minipage}{0.4\textwidth}
+		\flushright
+		\includegraphics[scale=0.7]{fig/dBg}
+	\end{minipage}
+	
+	\vfill
+	{\color{blue} Сборка генома $\iff$ поиск $\mathbf{p}^*$ среди всех эйлеровых путей в графе де Брёйна $G$, построенном по ридам.}
 \end{frame}
 
 \begin{frame}{Проблема повторов}
@@ -111,62 +126,65 @@
 По графу ответить на этот вопрос невозможно!
 
 \medskip
-Для разрешения повторов обычно используют информацию о расстоянии между рёбрами графа.
+{\color{blue} Для разрешения повторов требуется внешняя информация.}
 \end{frame}
 
-\begin{frame}{Постановка задачи}
-	Зафиксируем пару $\mathbf{e}_1, \mathbf{e}_2$ рёбер графа де Брёйна.
-	Будем предполагать, что
-	\begin{enumerate}
-		\item  $\mathbf{e}_1 = \mathcal{S}[a, b]$ и $\mathbf{e}_2 = \mathcal{S}[c, d]$, где $a < c$;
-		\item $\mathbf{e}_1$ и $\mathbf{e}_2$ соединяет путь $\bm p =  \mathbf{e}_1 \to p_1 \to \ldots \to p_m \to \mathbf{e}_2$.
-	\end{enumerate}
-	\bigskip
-	{\bf Графовое расстояние:} $d_{\mathrm{graph}} (\mathbf{e}_1, \mathbf{e}_2; \bm p) = \sum_{i=1}^m |p_i| - (m+1)k$,\\
-	\medskip
- 	{\bf Геномное расстояние:} $d_{\mathrm{genome}}(\mathbf{e}_1, \mathbf{e}_2) = c - b$.\\
- 	\bigskip
-	Определим множества
-	\begin{gather*}
-		\mathbf{D}_{\mathrm{graph}} = \big\{ d_{\mathrm{graph}} (\mathbf{e}_1, \mathbf{e}_2; \bm p)\  |\  \bm p \text{ --- путь, соединяющий } \mathbf{e}_1 \text{ с } \mathbf{e}_2  \big\} , \\
-		\mathbf{D}_{\mathrm{genome}} = \big\{  d_{\mathrm{genome}}(\mathbf{e}_1^{(i)}, \mathbf{e}_2^{(j)})\ \mid \mathbf{e}_s^{(t)} \text{ --- } t \text{-ое вхождение } \mathbf{e}_s \text{ в геном } \mathcal{S} \big\},
-	\end{gather*}\\ 
-	\textsc{ \large \color{blue} Задача:}
-	Предложить алгоритм, определяющий  элементы множества $\mathbf{D} = \mathbf{D}_{\mathrm{graph}} \cap \mathbf{D}_{\mathrm{genome}}$.
-\end{frame}
-
-\begin{frame}{Вероятностная модель парных ридов}
-
-Пусть $\ell > 0$ --- целое число. Рассмотрим независимые случайные величины $\xi \in \{ 1, \ldots, |\mathcal{S}| - \ell\}$ и $\eta > 0$.
+\begin{frame}{Парные риды}
+Рассмотрим независимые случайные величины
+\begin{itemize}
+	\item $\xi \sim \mathrm{U}(\{ 1, \ldots, |\mathcal{S}|\})$, играющую роль координаты в геноме;
+	\item $\eta > 0$ с произвольным распределением $\mathcal{P}_{\eta}$, которую мы далее будем называть \textbf{длиной вставки}.
+\end{itemize}
 
 \begin{block}{}
-	\begin{enumerate}
-		\item Фрагмент --- подстрока генома, имеющая вид $\mathcal{S}[\xi, \xi+\eta]$;
-		\item Левый рид --- префикс длины $\ell$ фрагмента, т. е. подстрока  $\mathcal{S}[\xi, \xi+\ell]$;
-		\item Правый рид --- суффикс длины $\ell$ фрагмента, т.е. подстрока $\mathcal{S}[\xi+\eta-\ell, \xi+\eta]$.
-	\end{enumerate}
+		Рассмотрим случайную подстроку генома, имеющую вид $\mathcal{S}[\xi, \xi+\eta]$.\\
+		\medskip
+		\textbf{Парный рид} --- это пара из её префикса $\mathcal{S}[\xi, \xi+\ell]$  (\textit{левый} рид) и суффикса $\mathcal{S}[\xi+\eta-\ell, \xi+\eta]$ (\textit{правый} рид)  фрагмента.
 \end{block}
-\begin{figure}[h]
+\begin{figure}
 	\includegraphics[scale=0.12]{fig/fragment}
-	\caption{Структура фрагмента}
 \end{figure}
 \end{frame}
 
-\begin{frame}{Вероятностный подход к задаче}
-	\begin{figure}	
-		\centering
-		\includegraphics[scale=0.2]{img/alignment_shifted}
-		\caption{Расположение ридов на рёбрах графа}
-	\end{figure}
+\begin{frame}{Парные риды как внешняя информация}
+\begin{figure}
+	\centering
+	\includegraphics[scale=0.2]{img/alignment_shifted}
+\end{figure}
 
-	Пусть $(r_1, r_2) \in \mathfrak{R}$, и $r_i$ является подстрокой ребра $\mathbf{e}_i$ ($i=1,2$). \\
-	\medskip
-	Введём обозначения: 
-	\begin{enumerate}
-		\item $g$ --- геномное расстояние между $\mathbf{e}_1$ и $\mathbf{e}_2$,
-		\item $t$ --- расстояние от конца $r_1$ до конца $\mathbf{e}_1$,
-		\item $\tau$ --- координата начала $r_2$ на $\mathbf{e}_2$.
-	\end{enumerate}
+Пусть $(r_1, r_2) \in \mathfrak{R}$, и $r_i$ является подстрокой ребра $\mathbf{e}_i$ ($i=1,2$). \\
+\medskip
+Введём обозначения: 
+\begin{enumerate}
+	\item $g$ --- геномное расстояние между $\mathbf{e}_1$ и $\mathbf{e}_2$,
+	\item $t$ --- расстояние от конца $r_1$ до конца $\mathbf{e}_1$,
+	\item $\tau$ --- координата начала $r_2$ на $\mathbf{e}_2$.
+\end{enumerate}
+Тогда \[ \eta = t + g + \tau + 2\ell. \]
+
+{\color{blue} Зная распределение $\eta$, мы получаем внешнюю информацию о расстоянии между рёбрами графа, <<прикладывая>> к ним риды.}
+
+\end{frame}
+
+\begin{frame}{Постановка задачи}
+Зафиксируем пару $\mathbf{e}_1, \mathbf{e}_2$ рёбер графа де Брёйна.
+Будем предполагать, что
+\begin{enumerate}
+	\item  $\mathbf{e}_1 = \mathcal{S}[a, b]$ и $\mathbf{e}_2 = \mathcal{S}[c, d]$, где $a < c$;
+	\item $\mathbf{e}_1$ и $\mathbf{e}_2$ соединяет путь $\bm p =  \mathbf{e}_1 \to p_1 \to \ldots \to p_m \to \mathbf{e}_2$.
+\end{enumerate}
+\bigskip
+{\bf Графовое расстояние:} $d_{\mathrm{graph}} (\mathbf{e}_1, \mathbf{e}_2; \bm p) = \sum_{i=1}^m |p_i| - (m+1)k$,\\
+\medskip
+{\bf Геномное расстояние:} $d_{\mathrm{genome}}(\mathbf{e}_1, \mathbf{e}_2) = c - b$.\\
+\bigskip
+Определим множества
+\begin{gather*}
+\mathbf{D}_{\mathrm{graph}} = \big\{ d_{\mathrm{graph}} (\mathbf{e}_1, \mathbf{e}_2; \bm p)\  |\  \bm p \text{ --- путь, соединяющий } \mathbf{e}_1 \text{ с } \mathbf{e}_2  \big\} , \\
+\mathbf{D}_{\mathrm{genome}} = \big\{  d_{\mathrm{genome}}(\mathbf{e}_1^{(i)}, \mathbf{e}_2^{(j)})\ \mid \mathbf{e}_s^{(t)} \text{ --- } t \text{-ое вхождение } \mathbf{e}_s \text{ в геном } \mathcal{S} \big\},
+\end{gather*}\\ 
+\textsc{ \large \color{blue} Задача:}
+Предложить алгоритм, определяющий  элементы множества $\mathbf{D} = \mathbf{D}_{\mathrm{graph}} \cap \mathbf{D}_{\mathrm{genome}}$ при помощи набора (\textit{библиотеки}) ридов $\mathfrak{R}$.
 \end{frame}
 
 \begin{frame}{Вероятностный подход к задаче}
@@ -178,7 +196,7 @@
 	\smallskip
 	При этом
 	\begin{enumerate}
-		\item Совместное распределение вектора $(t_i, \tau_i)$ зависит от $g_i$ как от параметра.
+		\item Совместное распределение вектора $(t_i, \tau_i)$ зависит от $g_i$ как от параметра;
 		\item $t_i$, $\tau_i$ и $g_i$ связаны соотношением $\tau_i = \eta_i - t_i - g_i - 2\ell$, где $g_i  \in \mathbf{D}$.
 	\end{enumerate}
 	\smallskip
@@ -207,7 +225,7 @@
 
 \begin{frame}{Переход к случаю нескольких реализаций}
 	\begin{itemize}
-		\item На практике для каждого рида  $(r_1, r_2) \in \mathfrak{R}$ реализуется собственное расстояние $g^{(i)} \in \mathbf{D}_{genome}$ для некоторого $i$.
+		\item На практике для каждого рида  $(r_1, r_2) \in \mathfrak{R}$ реализуется собственное расстояние $g^{(i)} \in \mathbf{D}_{\mathrm{genome}}$ для некоторого $i$.
 		\item Поэтому нельзя напрямую сделать переход к повторной независимой выборке, как это обычно бывает в статистике.
 	\end{itemize}
 	\medskip
@@ -259,7 +277,7 @@
 	\centering
 	\subfloat[Фрагмент графа]{{\includegraphics[width=0.45\textwidth]{fig/real-reads/bad-lib/4-graph} }}%
 	\qquad
-	\subfloat[Апостериорное распределение]{{\includegraphics[width=0.45\linewidth]{fig/real-reads/bad-lib/4-posterior} }}%
+	\subfloat[Апостериорное распределение расстояния $g$]{{\includegraphics[width=0.45\linewidth]{fig/real-reads/bad-lib/4-posterior} }}%
 	\caption{Два длинных ребра, не имеющих повторов}
 \end{figure}
 \end{frame}
@@ -269,8 +287,8 @@
 	\centering
 	\subfloat[Фрагмент графа]{{\includegraphics[width=0.45\linewidth]{fig/real-reads/bad-lib/3-graph} }}%
 	\qquad
-	\subfloat[Гистограмма $\eta - g$]{{\includegraphics[width=0.45\linewidth]{fig/real-reads/bad-lib/3-posterior} }}%
-	\caption{Длинное ребро без повторов и короткое ребро (63 bp) тройной кратности}
+	\subfloat[Апостериорное распределение расстояния $g$]{{\includegraphics[width=0.45\linewidth]{fig/real-reads/bad-lib/3-posterior} }}%
+	\caption{Длинное ребро без повторов и короткое ребро (63 bp), имеющее повтор тройной кратности}
 \end{figure}
 \end{frame}
 
@@ -279,10 +297,10 @@
 	\bigskip
 	\begin{enumerate}
 		\item Построена вероятностная модель, позволяющая получать требуемые оценки в виде апостериорных вероятностей для расстояний, имеющихся в графе.
-		\item Построенная модель протестирована на реальных геномных данных.
+		\item Построенная модель протестирована как на синтетических, так и на реальных геномных данных.
 	\end{enumerate}
 	\bigskip
-	В дальнейшем полученные оценки, например, могут быть применены в геномных ассемблерах для разрешения повторов в графе де Брёйна. 
+	В дальнейшем полученные оценки могут быть применены в геномных ассемблерах для разрешения повторов в графе де Брёйна. 
 \end{frame}
 
 \end{document}
